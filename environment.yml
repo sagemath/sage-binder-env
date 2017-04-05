@@ -1,0 +1,8 @@
+name: test-binder-sage
+
+channels:
+  - defaults
+  - conda-forge
+
+dependencies:
+  - sage
