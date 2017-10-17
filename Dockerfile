@@ -8,7 +8,7 @@ ENV HOME /home/${NB_USER}
 # Make sure the contents of our repo are in ${HOME}
 COPY . ${HOME}
 USER root
-COPY jupyter /usr/bin/
+COPY jupyter jupyter-notebook /usr/bin/
 RUN chown -R ${NB_USER}:${NB_USER} ${HOME}
 USER ${NB_USER}
 
