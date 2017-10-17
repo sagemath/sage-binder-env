@@ -13,4 +13,4 @@ RUN chown -R ${NB_USER}:${NB_USER} ${HOME}
 USER ${NB_USER}
 
 # Upgrade to jupyter 5.* as required by mybinder
-RUN sage -pip install "notebook>=5"
+RUN sage -pip install "notebook>=5" "ipykernel>=4.6"
