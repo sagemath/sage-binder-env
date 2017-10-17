@@ -1,2 +1,3 @@
 #!/bin/sh
-exec /usr/bin/sage -sh jupyter "$@"
+shift
+exec /usr/bin/sage -notebook jupyter "$@"
