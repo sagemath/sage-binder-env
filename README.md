@@ -6,6 +6,10 @@
 
 Nicolas M. Thiéry
 
+The demo notebooks for GAP, Singular, and Pari were written by the
+authors of the respective kernels. See the
+[report on their implementation](https://github.com/OpenDreamKit/OpenDreamKit/tree/master/WP4/D4.4).
+
 ## Notebooks
 
 - [index.ipynb](index.ipynb): starter notebook / brief SageMath demo
