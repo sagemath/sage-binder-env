@@ -14,3 +14,8 @@ USER ${NB_USER}
 
 # Upgrade to jupyter 5.* as required by mybinder
 RUN sage -pip install --upgrade notebook
+
+# Install additional kernels
+RUN sage -i gap_jupyter
+RUN sage -i singular_jupyter
+RUN sage -i pari_jupyter
