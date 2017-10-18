@@ -1,6 +1,6 @@
 # test-binder-sage: Testing binder services for deploying SageMath Jupyter notebooks
 
-[![Binder](https://beta.mybinder.org/badge.svg)](https://beta.mybinder.org/v2/gh/nthiery/test-binder-sage/master)
+[![Binder](https://beta.mybinder.org/badge.svg)](https://beta.mybinder.org/v2/gh/nthiery/test-binder-sage/master?filepath=index.ipynb)
 
 ## Authors
 
