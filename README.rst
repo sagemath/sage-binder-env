@@ -25,10 +25,10 @@ Demo notebooks
 This repository provides some simple live demos for SageMath and other
 software included in the SageMath distribution.
 
-- `index.ipynb`_: starter notebook / brief SageMath demo
-- `demo-gap.ipynb`_: brief GAP demo
-- `demo-pari.ipynb`_: brief Pari/GP demo
-- `demo-singular.ipynb`_: brief Singular demo
+- `index.ipynb <index.ipy>`_: starter notebook / brief SageMath demo
+- `demo-gap.ipynb <demo-gap.ipynb>`_: brief GAP demo
+- `demo-pari.ipynb <demo-pari.ipynb>`_: brief Pari/GP demo
+- `demo-singular.ipynb <demo-singular.ipynb>`_: brief Singular demo
 
 .. TODO::
 
@@ -50,8 +50,7 @@ With `Thebe <https://github.com/minrk/thebelab>`_, it's easy to turn
 them into live code cells that will use Binder and the executable
 environment defined by this repository.
 
-See for example this
-<a href="https://minrk.github.io/thebelab/prompts.html">Thebe example</a>.
+See this `Thebe example <https://minrk.github.io/thebelab/prompts.html>`_.
 
 For the Sphinx-generated documentation of a SageMath based project,
 you can use the Sphinx extension provided by the
