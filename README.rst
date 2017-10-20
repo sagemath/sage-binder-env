@@ -33,7 +33,7 @@ software included in the SageMath distribution.
 .. TODO::
 
     Develop a collection of striking demo notebooks, and link from
-    `http://sagemath.org/`.
+    `http://sagemath.org/`, maybe as try.sagemath.org.
 
 Example of binder-enabled repository for SageMath
 -------------------------------------------------
