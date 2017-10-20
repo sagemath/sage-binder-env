@@ -1,4 +1,5 @@
-# A SageMath-based computing environment for binder
+A SageMath-based computing environment for binder
+=================================================
 
 .. image:: https://beta.mybinder.org/badge.svg
    :target: https://beta.mybinder.org/v2/gh/sagemath/sage-binder-env/master?filepath=index.ipynb
@@ -18,7 +19,8 @@ This repository illustrates Binder use cases for
     A general purpose, community developed open source software for
     computational mathematics.
 
-## Demo notebooks
+Demo notebooks
+--------------
 
 This repository provides some simple live demos for SageMath and other
 software included in the SageMath distribution.
@@ -33,7 +35,8 @@ software included in the SageMath distribution.
     Develop a collection of striking demo notebooks, and link from
     `http://sagemath.org/`.
 
-## Example of binder-enabled repository for SageMath
+Example of binder-enabled repository for SageMath
+-------------------------------------------------
 
 Have a repository full of Jupyter notebooks using SageMath? It's easy
 to setup Binder to let anyone run them. Just copy the short
@@ -68,12 +71,13 @@ relieve the SageMath community from maintaining a custom solution.
 On the other hand it's still relatively recent and quickly evolving
 technology with less settled sustainability.
 
-## Authors
+Authors
+-------
 
 Nicolas M. Thiéry
 
 The demo notebooks for GAP, Singular, and Pari were written by the
 authors of the respective kernels. See the
-[report on their implementation](https://github.com/OpenDreamKit/OpenDreamKit/tree/master/WP4/D4.4).
+`report on their implementation <https://github.com/OpenDreamKit/OpenDreamKit/tree/master/WP4/D4.4>`_.
 
 Contributions most welcome!
