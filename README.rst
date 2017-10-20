@@ -55,10 +55,10 @@ See this `Thebe example <https://minrk.github.io/thebelab/prompts.html>`_.
 For the Sphinx-generated documentation of a SageMath based project,
 you can use the Sphinx extension provided by the
 `Sage package authoring utilities <https://github.com/sagemath/sage-package>`_.
-For an example, see
+For an example, see the
 `short graphics demo <http://more-sagemath-tutorials.readthedocs.io/en/latest/mocksage/plot/demo.html>`_
 of
-`More SageMath tutorials <http://more-sagemath-tutorials.readthedocs.io/>`_;
+`More SageMath tutorials <http://more-sagemath-tutorials.readthedocs.io/>`_,
 and click `Activate`.
 
 Note: `Thebe` is similar in principle to `SageMath Cell <http://sagecell.sagemath.org/>`_.
