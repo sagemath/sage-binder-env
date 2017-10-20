@@ -30,7 +30,7 @@ software included in the SageMath distribution.
 - `demo-pari.ipynb <demo-pari.ipynb>`_: brief Pari/GP demo
 - `demo-singular.ipynb <demo-singular.ipynb>`_: brief Singular demo
 
-.. TODO::
+.. TOPIC:: TODO
 
     Develop a collection of striking demo notebooks, and link from
     `http://sagemath.org/`, maybe as try.sagemath.org.
@@ -40,7 +40,7 @@ Example of binder-enabled repository for SageMath
 
 Have a repository full of Jupyter notebooks using SageMath? It's easy
 to setup Binder to let anyone run them. Just copy the short
-`Dockerfile`_ from this repository, and adapt it to your needs. You
+`Dockerfile <Dockerfile>`_ from this repository, and adapt it to your needs. You
 probably also want to insert the Binder badge in your `README`.
 
 ## Computing backend for live documents (Thebe)
