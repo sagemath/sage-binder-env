@@ -43,7 +43,8 @@ to setup Binder to let anyone run them. Just copy the short
 `Dockerfile <Dockerfile>`_ from this repository, and adapt it to your needs. You
 probably also want to insert the Binder badge in your `README`.
 
-## Computing backend for live documents (Thebe)
+Computing backend for live documents (Thebe)
+--------------------------------------------
 
 Have HTML pages (e.g. documentation) containing chunks of Sage code?
 With `Thebe <https://github.com/minrk/thebelab>`_, it's easy to turn
