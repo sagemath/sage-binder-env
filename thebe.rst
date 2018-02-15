@@ -14,7 +14,10 @@ include:
 This is handled by the `Thebe <https://github.com/minrk/thebelab>`_
 javascript library, configured to run the computations on `mybinder.org
 <http://mybinder.org>`_, using the latest version of `SageMath
-<http://sagemath.org>`. See below for some background on those tools.
+<http://sagemath.org>`_. See below for some background on those tools.
+This is meant for casual use; as for any cloud-based service, don't
+run calculations that could leak private information. See the
+`binder faq <https://mybinder.readthedocs.io/en/latest/faq.html>`_ for details.
 
 `Thebe <https://github.com/minrk/thebelab>`_ is a small javascript
 library based on `JupyterLab <http://jupyterlab.readthedocs.io/en/latest/>`_
