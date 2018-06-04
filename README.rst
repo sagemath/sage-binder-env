@@ -41,25 +41,27 @@ Example of binder-enabled repository for SageMath
 Have a repository full of Jupyter notebooks using SageMath? It's easy
 to setup Binder to let anyone run them. Just copy the short
 `Dockerfile <Dockerfile>`_ from this repository, and adapt it to your needs. You
-probably also want to insert the Binder badge in your `README`.
+probably also want to insert the Binder badge in your `READ ME`.
 
-Computing backend for live documents (Thebe)
---------------------------------------------
+Examples:
+- `Some live slides for a talk <https://mybinder.org/v2/gh/nthiery/harmonic-modules/master?filepath=talk.ipynb>`_
+- `A research paper logbook <https://mybinder.org/v2/gh/defeo/ffisom/master?filepath=notebooks>`_
 
-Have HTML pages (e.g. documentation) containing chunks of Sage code?
+Computing backend for live documents with Thebe
+-----------------------------------------------
+
+Have HTML pages (e.g. documentation) containing chunks of `SageMath <http://sagemath.org>`_ code?
 With `Thebe <https://github.com/minrk/thebelab>`_, it's easy to turn
-them into live code cells that will use Binder and the executable
-environment defined by this repository.
+them into live code cells that will use `Binder <http://mybinder.org>`_
+and the executable environment defined by this repository.
 
 See this `Thebe example <https://minrk.github.io/thebelab/prompts.html>`_.
 
-For the Sphinx-generated documentation of a SageMath based project,
+For the Sphinx-generated documentation of a Sage based project,
 you can use the Sphinx extension provided by the
 `Sage package authoring utilities <https://github.com/sagemath/sage-package>`_.
-For an example, see the
-`short graphics demo <http://more-sagemath-tutorials.readthedocs.io/en/latest/mocksage/plot/demo.html>`_
-of
-`More SageMath tutorials <http://more-sagemath-tutorials.readthedocs.io/>`_,
+For an example, see this
+`demo page <http://sage-package.readthedocs.io/en/latest/sage_package/sphinx-demo.html>`_,
 and click `Activate`.
 
 Note: `Thebe` is similar in principle to `SageMath Cell <http://sagecell.sagemath.org/>`_.
@@ -69,7 +71,12 @@ Jupyter server, ...) and executable environment (e.g. via Binder).
 It also targets a much broader community, with the potential to
 relieve the SageMath community from maintaining a custom solution.
 On the other hand it's still relatively recent and quickly evolving
-technology with less settled sustainability.
+technology with less settled sustainability. Also the SageMath Cell
+has been optimized to be more reactive on startup and reduce
+resource consumption. Those optimizations have not yet been ported to
+Thebe+binder.
+
+See also `thebe.rst <thebe.rst>`_ for additional reader-oriented notes.
 
 Authors
 -------
