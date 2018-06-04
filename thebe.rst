@@ -34,4 +34,4 @@ instance.
 software for mathematical computations.
 
 See also the `README <README.rst>`_ for some more on how to set up
-this service on your own html pages.
+this service on your own web pages.
