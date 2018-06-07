@@ -35,8 +35,8 @@ software included in the SageMath distribution.
     Develop a collection of striking demo notebooks, and link from
     `http://sagemath.org/`, maybe as try.sagemath.org.
 
-Example of binder-enabled repository for SageMath
--------------------------------------------------
+Examples of binder-enabled repository for SageMath
+--------------------------------------------------
 
 Have a repository full of Jupyter notebooks using SageMath? It's easy
 to setup Binder to let anyone run them. Just copy the short
