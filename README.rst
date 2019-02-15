@@ -81,31 +81,31 @@ See also `thebe.rst <thebe.rst>`_ for additional reader-oriented notes.
 Extending the sagemath Docker image
 -----------------------------------
 
-The sample [`Dockerfile`](https://github.com/sagemath/sage-binder-env/blob/master/Dockerfile)
-in this repository is based on the official `sagemath/sagemath` Docker image.  It includes
+The sample `Dockerfile <https://github.com/sagemath/sage-binder-env/blob/master/Dockerfile>`_
+in this repository is based on the official ``sagemath/sagemath`` Docker image.  It includes
 Sage itself, and all the software packages typically included in a standard Sage installation,
 though not *everything* (in particular not optional Sage SPKGs, or other system software
 packages).
 
-So in order to install additional Sage SPKGs it is possible to include a line like
+So in order to install additional Sage SPKGs it is possible to include a line like::
 
     RUN sage -i <spkg-name>
     
-in the `Dockerfile`.  Note, due to a current shortcoming in the official Docker image it is
-also necessary to install the `make` system package before running `sage -i`.  See the
+in the ``Dockerfile``.  Note, due to a current shortcoming in the official Docker image it is
+also necessary to install the `make` system package before running ``sage -i``.  See the
 next section.
 
 Installing additional system packages
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To add additional software packages a couple more steps are involved,
-albeit relatively simple.  The thing to understand about the `sagemath/sagemath` image is
+albeit relatively simple.  The thing to understand about the ``sagemath/sagemath`` image is
 that by default it puts you in a user called `sage`, so in order to install system packages
 it is necessary, when extending the image, to first switch back to the `root` user.
 Then, because the image is based on Ubuntu, the `apt-get` command can be used to install
 Ubuntu packages.  The canonical way to do this in a `Dockerfile` involves updating the
 APT cache, installing the packages, and then cleaning up the APT cache again all within
-a single command (this is in order to keep cache files out of the image):
+a single command (this is in order to keep cache files out of the image)::
 
     USER root
     RUN apt-get -qq update \
@@ -113,9 +113,9 @@ a single command (this is in order to keep cache files out of the image):
      && apt-get -qq clean
     USER sage
     
-Finally, just make sure toward the end of the `Dockerfile` that you switch the image
-user back to `sage` (so that when users run the container they are not running it as
-`root`.
+Finally, just make sure toward the end of the ``Dockerfile`` that you switch the image
+user back to ``sage`` (so that when users run the container they are not running it as
+``root``.
         
 
 Authors
