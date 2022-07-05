@@ -5,7 +5,7 @@ channels:
   - conda-forge
 
 dependencies:
-  - sage
+  - sage=9.2
     # ipywidgets is a Sage dependency, but rendering fails in binder
     # presumably some extension activation missing.
     # https://discourse.jupyter.org/t/binder-and-sagemath/11059/8
