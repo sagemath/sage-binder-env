@@ -1,4 +1,4 @@
-name: test-binder-sage
+name: sage-binder-env
 
 channels:
   - conda-forge
