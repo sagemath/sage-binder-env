@@ -2,14 +2,14 @@ A SageMath-based computing environment for binder
 =================================================
 
 .. image:: https://mybinder.org/badge_logo.svg
- :target: https://mybinder.org/v2/gh/sagemath/sage-binder-env/master?filepath=index.ipynb
+ :target: https://mybinder.org/v2/gh/sagemath/sage-binder-env/master?urlpath=lab/tree/index.ipynb
 
-This repository illustrates Binder use cases for
-`SageMath <http://sagemath.org>`_.
+This repository illustrates using the `binder <http://mybinder.org>`_
+service for `SageMath <http://sagemath.org>`_.
 
 .. TOPIC:: What is `Binder <http://mybinder.org>`_?
 
-    Have a repository full of Jupyter notebooks? With `Binder
+    Have a repository full of Jupyter notebooks? With `binder
     <http://mybinder.org>`_, you can add a badge that opens those
     notebooks in an executable environment, making your code
     immediately reproducible by anyone, anywhere.
@@ -35,8 +35,8 @@ software included in the SageMath distribution.
     Develop a collection of striking demo notebooks, and link from
     `http://sagemath.org/`, maybe as try.sagemath.org.
 
-Examples of binder-enabled repository for SageMath
---------------------------------------------------
+Examples of binder-enabled repositories for SageMath
+----------------------------------------------------
 
 Have a repository full of Jupyter notebooks using SageMath? It's easy
 to setup Binder to let anyone run them. Just copy the short
