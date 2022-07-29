@@ -4,4 +4,16 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - sage=9.6
+  # Install a minimal version of SageMath, without plotting, without symbolic
+  # computations, …. Replace sagelib with sage if you want the full SageMath
+  # distribution (takes much longer to load in binder.)
+  - sagelib=9.6
+  - jupyterlab
+  # Required by the SageMath kernel in Jupyter
+  - ipywidgets
+  # If you chose sagelib instead of sage above, you can add the required
+  # features manually here, e.g., matplotlib-base for basic plotting, sympy for
+  # symbolic computations, …. See the "run" section of
+  # https://github.com/conda-forge/sage-feedstock/blob/main/recipe/meta.yaml
+  # for the things that are included in "sage" but that might be missing from
+  # "sagelib".
