@@ -25,7 +25,7 @@ Demo notebooks
 This repository provides some simple live demos for SageMath and other
 software included in the SageMath distribution.
 
-- `index.ipynb <index.ipy>`_: starter notebook / brief SageMath demo
+- `index.ipynb <index.ipynb>`_: starter notebook / brief SageMath demo
 - `demo-gap.ipynb <demo-gap.ipynb>`_: brief GAP demo
 - `demo-pari.ipynb <demo-pari.ipynb>`_: brief Pari/GP demo
 - `demo-singular.ipynb <demo-singular.ipynb>`_: brief Singular demo
