@@ -2,7 +2,7 @@ A SageMath-based computing environment for binder
 =================================================
 
 .. image:: https://mybinder.org/badge_logo.svg
- :target: https://mybinder.org/v2/gh/sagemath/sage-binder-env/master?filepath=index.ipynb
+ :target: https://mybinder.org/v2/gh/kwankyu/sage-binder-env/master?filepath=index.ipynb
 
 This repository illustrates Binder use cases for
 `SageMath <http://sagemath.org>`_.
@@ -90,7 +90,7 @@ packages).
 So in order to install additional Sage SPKGs it is possible to include a line like::
 
     RUN sage -i <spkg-name>
-    
+
 in the ``Dockerfile``.  Note, due to a current shortcoming in the official Docker image it is
 also necessary to install the `make` system package before running ``sage -i``.  See the
 next section.
@@ -112,11 +112,11 @@ a single command (this is in order to keep cache files out of the image)::
      && apt-get -qq install -y --no-install-recommends <packages-to-install> \
      && apt-get -qq clean
     USER sage
-    
+
 Finally, just make sure toward the end of the ``Dockerfile`` that you switch the image
 user back to ``sage`` (so that when users run the container they are not running it as
 ``root``.
-        
+
 
 Authors
 -------
