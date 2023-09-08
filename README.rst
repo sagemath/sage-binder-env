@@ -19,24 +19,24 @@ particular, you probably want to modify this line::
 
 :target: https://mybinder.org/v2/gh/...
 
-with `...` replaced with your forked repo. This makes the Binder badge use your
-repo to create the Jupyter server.
+with `...` filled with the name of your forked repo. This makes the Binder badge use your
+repo to create the Jupyter computing environment.
 
 
-Extending the sagemath Docker image
------------------------------------
+Extending the Dockerfile
+------------------------
 
 The `Dockerfile` builds Sage with base Docker image::
 
     FROM ghcr.io/sagemath/sage/sage-ubuntu-focal-standard-with-targets-optional:dev
 
-which contains Sage built in the current *develop* branch.
+which contains Sage built in the current develop branch.
 
 It includes Sage itself, and all the software packages typically
 included in a standard Sage installation, though not *everything*. In
 particular not optional Sage SPKGs, or other system software packages.
 
-So in order to install additional Sage SPKGs, it is possible to include a line like::
+So in order to install additional Sage SPKGs, include a line like::
 
     RUN sage -i <spkg-name>
 
