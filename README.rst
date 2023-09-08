@@ -1,32 +1,49 @@
-Binder computing environment using SageMath
-===========================================
+A Binder repo for SageMath computing environment
+================================================
+
+This repository is a Binder repo based on `SageMath <http://sagemath.org>`_. To
+access a computing environment created by `Binder <http://mybinder.org>`_ using
+SageMath kernel, click on this badge
 
 .. image:: https://mybinder.org/badge_logo.svg
  :target: https://mybinder.org/v2/gh/kwankyu/sage-binder-env/master
 
-This repository provides a `Binder <http://mybinder.org>`_ repo based on
-`SageMath <http://sagemath.org>`_.
 
+An example Binder repo for SageMath
+-----------------------------------
 
-An example of binder repository for SageMath
---------------------------------------------
+Have a repository full of Jupyter notebooks using SageMath? It's easy to setup
+Binder to let anyone run them. Just fork this repo, put your notebooks in the
+`notebooks` directory.  and modify this `README.rst` to your needs. In
+particular, you probably want to modify this line::
 
-Have a repository full of Jupyter notebooks using SageMath? It's easy
-to setup Binder to let anyone run them. Just copy the short
-`Dockerfile <Dockerfile>`_ from this repository, and adapt it to your needs. You
-probably also want to insert the Binder badge in your `README.rst`.
+:target: https://mybinder.org/v2/gh/...
+
+with `...` replaced with your forked repo. This makes the Binder badge use your
+repo to create the Jupyter server.
 
 
 Extending the sagemath Docker image
 -----------------------------------
 
-The sample `Dockerfile` in this repository is based on the official sagemath
-Docker image.  It includes Sage itself, and all the software packages typically
-included in a standard Sage installation, though not *everything* (in
-particular not optional Sage SPKGs, or other system software packages).
+The `Dockerfile` builds Sage with base Docker image::
 
-So in order to install additional Sage SPKGs it is possible to include a line like::
+    FROM ghcr.io/sagemath/sage/sage-ubuntu-focal-standard-with-targets-optional:dev
+
+which contains Sage built in the current *develop* branch.
+
+It includes Sage itself, and all the software packages typically
+included in a standard Sage installation, though not *everything*. In
+particular not optional Sage SPKGs, or other system software packages.
+
+So in order to install additional Sage SPKGs, it is possible to include a line like::
 
     RUN sage -i <spkg-name>
 
-in the ``Dockerfile``.
+in the `Dockerfile`.
+
+
+Authors
+-------
+
+Nicolas M. Thiéry, E. Madison Bray, and Kwankyu Lee
