@@ -2,7 +2,7 @@ A SageMath-based computing environment for binder
 =================================================
 
 .. image:: https://mybinder.org/badge_logo.svg
- :target: https://mybinder.org/v2/gh/sagemath/sage-binder-env/master?urlpath=lab/tree/index.ipynb
+ :target: https://mybinder.org/v2/gh/sagemath/sage-binder-env/lab?urlpath=lab/tree/index.ipynb
 
 This repository illustrates using the `binder <http://mybinder.org>`_
 service for `SageMath <http://sagemath.org>`_.
