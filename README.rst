@@ -36,12 +36,6 @@ It includes Sage itself, and all the software packages typically
 included in a standard Sage installation, though not *everything*. In
 particular not optional Sage SPKGs, or other system software packages.
 
-So in order to install additional Sage SPKGs, include a line like::
-
-    RUN /sage/sage -i <spkg-name>
-
-in the `Dockerfile`.
-
 
 Authors
 -------
