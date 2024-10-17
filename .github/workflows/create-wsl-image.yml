@@ -1,0 +1,103 @@
+name: Build Docker Image and Export for WSL
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Run every day
+  workflow_dispatch:
+
+jobs:
+  build-and-export:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Prepare Dockerfile
+      run: |
+        curl -o Dockerfile https://raw.githubusercontent.com/sagemath/sage-binder-env/master/Dockerfile
+        sed -i '/COPY notebooks/d' Dockerfile  # remove the line from Dockerfile
+
+    - name: Extract version from Dockerfile
+      id: extract_version
+      run: |
+        VERSION=$(grep '^FROM ghcr.io/sagemath/sage-binder-env:' Dockerfile | sed 's/^FROM ghcr.io\/sagemath\/sage-binder-env://')
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+    - name: Build and export Docker image
+      run: |
+        docker build -t sagemath-container .
+        export CONTAINER_ID=$(docker create sagemath-container)
+        docker export $CONTAINER_ID -o sagemath-$VERSION-wsl.tar
+
+    - name: Upload tar file as artifact
+      id: upload-artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: sagemath-${{ env.VERSION }}-wsl
+        path: sagemath-${{ env.VERSION }}-wsl.tar
+
+    # Make a release
+
+    - name: Get latest release version
+      id: get_latest_release
+      run: |
+        LATEST_VERSION=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r '.tag_name // "0.0.0"' | sed 's/v//')
+        echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
+
+    - name: Zip the tar file
+      if: ${{ env.VERSION != env.LATEST_VERSION }}
+      run: |
+        zip sagemath-${{ env.VERSION }}-wsl.zip sagemath-${{ env.VERSION }}-wsl.tar
+
+    - name: Create GitHub Release
+      if: ${{ env.VERSION != env.LATEST_VERSION }}
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ env.VERSION }}
+        release_name: SageMath ${{ env.VERSION }} WSL
+        draft: false
+        prerelease: false
+
+    - name: Upload release asset
+      if: ${{ env.VERSION != env.LATEST_VERSION }}
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./sagemath-${{ env.VERSION }}-wsl.zip
+        asset_name: sagemath-${{ env.VERSION }}-wsl.zip
+        asset_content_type: application/zip
+
+    # Generate a Windows PowerShell script
+
+    - name: Checkout repo
+      if: ${{ env.VERSION != env.LATEST_VERSION }}
+      uses: actions/checkout@v3
+
+    - name: Generate PowerShell Script
+      if: ${{ env.VERSION != env.LATEST_VERSION }}
+      run: |
+        cat << EOF > download_and_import_sagemath_to_wsl.ps1
+        \$artifactUrl = "https://github.com/sagemath/sage-binder-env/releases/download/v$VERSION/sagemath-$VERSION-wsl.zip"
+        \$zipFilePath = "\$PWD\\artifact.zip"
+        # Download the artifact
+        Invoke-WebRequest -Uri \$artifactUrl -OutFile \$zipFilePath
+        # Unzip the artifact
+        Expand-Archive -Path \$zipFilePath
+        # Import the WSL image
+        wsl --import SageMath-$VERSION sagemath-$VERSION-wsl.tar
+        # Set the default user
+        wsl -d SageMath-$VERSION --user user
+        Remove-Item \$zipFilePath
+        EOF
+      shell: bash
+
+    - name: Commit PowerShell script
+      if: ${{ env.VERSION != env.LATEST_VERSION }}
+      run: |
+        git config --global user.name 'GitHub Actions'
+        git config --global user.email 'actions@github.com'
+        git add download_and_import_sagemath_to_wsl.ps1
+        git commit --amend -m "Add PowerShell script to download artifact and import WSL tar image"
+        git push -f origin
