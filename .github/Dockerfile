@@ -28,7 +28,7 @@ RUN apt-get update
 RUN apt-get install -y python3-pip
 RUN python3 -m pip install --no-warn-script-location notebook jupyterlab ipywidgets
 
-# Disable annoying pupup for Jupyter news
+# Disable annoying popup for Jupyter news
 RUN jupyter labextension disable "@jupyterlab/apputils-extension:announcements"
 
 # Install /sage from target

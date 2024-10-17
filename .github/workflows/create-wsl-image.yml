@@ -1,4 +1,4 @@
-name: Build Docker Image and Export for WSL
+name: Build docker image and export for WSL
 
 on:
   schedule:
@@ -8,7 +8,13 @@ on:
 jobs:
   build-and-export:
     runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.extract_version.outputs.version }}
     steps:
+
+    # Create WSL export (a tar file) of the minimal Sage install
+
     - name: Prepare Dockerfile
       run: |
         curl -o Dockerfile https://raw.githubusercontent.com/sagemath/sage-binder-env/master/Dockerfile
@@ -19,6 +25,7 @@ jobs:
       run: |
         VERSION=$(grep '^FROM ghcr.io/sagemath/sage-binder-env:' Dockerfile | sed 's/^FROM ghcr.io\/sagemath\/sage-binder-env://')
         echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
 
     - name: Build and export Docker image
       run: |
@@ -54,7 +61,12 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: v${{ env.VERSION }}
-        release_name: SageMath ${{ env.VERSION }} WSL
+        release_name: Run SageMath ${{ env.VERSION }} on WSL
+        body: |
+          Either .ps1 or .exe installer downloads the .zip file and imports the minimal SageMath ${{ env.VERSION }} into WSL.
+
+          Currently Windows rejects the .exe installer claiming a virus. It is false positive.
+          However, if you worry, use the .ps1 installer, which should be run with PowerShell.
         draft: false
         prerelease: false
 
@@ -72,37 +84,112 @@ jobs:
     # Generate a Windows PowerShell script
 
     - name: Checkout repo
-      if: ${{ env.VERSION != env.LATEST_VERSION }}
       uses: actions/checkout@v3
 
     - name: Generate PowerShell Script
-      if: ${{ env.VERSION != env.LATEST_VERSION }}
       run: |
         cat << EOF > download_and_import_sagemath_to_wsl.ps1
-        \$artifactUrl = "https://github.com/sagemath/sage-binder-env/releases/download/v$VERSION/sagemath-$VERSION-wsl.zip"
+        # ----------------------------------------------------
+        # Copy and paste all lines into the Windows PowerShell
+        # ----------------------------------------------------
 
-        \$zipFilePath = "\$PWD\\artifact.zip"
-        \$extractPath = "\$PWD"
+        # Check if WSL is installed by verifying the presence of wsl.exe
+        \$wslPath = (Get-Command wsl.exe -ErrorAction SilentlyContinue).Source
+        if (\$wslPath -eq \$null) {
+          Write-Host "WSL is required to run SageMath. Exiting script."
+          exit
+        }
+        # Check if SageMath already exists in WSL
+        \$sageMathWSL = wsl -l -v | Select-String "SageMath-$VERSION"
 
-        # Download the artifact
-        Invoke-WebRequest -Uri \$artifactUrl -OutFile \$zipFilePath
-
-        # Unzip the artifact
-        Expand-Archive -Path \$zipFilePath -DestinationPath \$extractPath
-
-        # Import the WSL image
-        wsl --import SageMath-$VERSION \$extractPath \$extractPath\\sagemath-$VERSION-wsl.tar
-
-        # Remove the downloaded zip file after successful WSL import
-        Remove-Item \$zipFilePath
+        if (\$sageMathWSL) {
+          Write-Host "SageMath already exists in WSL. Skipping import."
+        } else {
+          \$artifactUrl = "https://github.com/sagemath/sage-binder-env/releases/download/v$VERSION/sagemath-$VERSION-wsl.zip"
+          \$zipFilePath = "\$PWD\\artifact.zip"
+          \$dataPath = "\$HOME\\AppData\\Local\\SageMath"
+          \$tarFilePath = "\$dataPath\\sagemath-${{ env.VERSION }}-wsl.tar"
+          # Ensure the path exists
+          if (-Not (Test-Path \$dataPath)) { New-Item -Path \$dataPath -ItemType Directory > \$null }
+          # Skip downloading and extracting if the tar file already exists
+          if (-Not (Test-Path \$tarFilePath)) {
+            Write-Host "Downloading and extracting SageMath..."
+            Start-BitsTransfer -Source \$artifactUrl -Destination \$zipFilePath
+            Expand-Archive -Path \$zipFilePath -DestinationPath \$dataPath -Force
+            if (Test-Path \$tarFilePath) { Remove-Item \$zipFilePath }
+          } else {
+            Write-Host "SageMath tar file already exists. Skipping download."
+          }
+          # Import the WSL image
+          wsl --import SageMath-$VERSION \$dataPath \$tarFilePath
+          # Create a shortcut that starts Sage on Desktop
+          \$ShortcutFile = "\$([Environment]::GetFolderPath('Desktop'))\\Run Sage.lnk"
+          \$TargetPath = "C:\\Windows\\System32\\wsl.exe"
+          \$Arguments = "-d SageMath-${{ env.VERSION }} --user user --cd ~ /sage/sage"
+          \$WScriptShell = New-Object -ComObject WScript.Shell
+          \$Shortcut = \$WScriptShell.CreateShortcut(\$ShortcutFile)
+          \$Shortcut.TargetPath = \$TargetPath
+          \$Shortcut.Arguments = \$Arguments
+          \$Shortcut.IconLocation = "\$([System.Environment]::GetEnvironmentVariable('SystemRoot'))\\System32\\SHELL32.dll, 25"
+          \$Shortcut.Save()
+          Write-Host "Shortcut created at: \$ShortcutFile"
+          # Create a shortcut that starts Jupyter on Desktop
+          \$ShortcutFile = "\$([Environment]::GetFolderPath('Desktop'))\\Run Jupyter.lnk"
+          \$TargetPath = "C:\\Windows\\System32\\wsl.exe"
+          \$Arguments = "-d SageMath-${{ env.VERSION }} --user user --cd ~ jupyter lab --no-browser"
+          \$WScriptShell = New-Object -ComObject WScript.Shell
+          \$Shortcut = \$WScriptShell.CreateShortcut(\$ShortcutFile)
+          \$Shortcut.TargetPath = \$TargetPath
+          \$Shortcut.Arguments = \$Arguments
+          \$Shortcut.IconLocation = "\$([System.Environment]::GetEnvironmentVariable('SystemRoot'))\\System32\\SHELL32.dll, 25"
+          \$Shortcut.Save()
+          Write-Host "Shortcut created at: \$ShortcutFile"
+        }
         EOF
       shell: bash
 
-    - name: Commit PowerShell script
-      if: ${{ env.VERSION != env.LATEST_VERSION }}
+    - name: Upload PowerShell script as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: download_and_import_sagemath_to_wsl
+        path: download_and_import_sagemath_to_wsl.ps1
+
+    - name: Upload PowerShell script as release asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./download_and_import_sagemath_to_wsl.ps1
+        asset_name: sagemath-${{ env.VERSION }}-wsl-installer.ps1
+        asset_content_type: application/octet-stream
+
+  build-exe:
+    runs-on: windows-latest
+    needs: build-and-export
+    if: ${{ contains(needs.build-and-export.outputs.upload_url || '', 'http') }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Download PowerShell Script artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: download_and_import_sagemath_to_wsl
+
+    - name: Install PS2EXE
       run: |
-        git config --global user.name 'GitHub Actions'
-        git config --global user.email 'actions@github.com'
-        git add download_and_import_sagemath_to_wsl.ps1
-        git commit --amend -m "Add PowerShell script to download artifact and import WSL tar image"
-        git push -f origin
+        Install-Module -Name ps2exe -Force
+        Import-Module ps2exe
+        Invoke-ps2exe -inputFile .\download_and_import_sagemath_to_wsl.ps1 -outputFile .\sagemath_installer.exe -noConsole
+      shell: powershell
+
+    - name: Upload EXE to GitHub Release
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.build-and-export.outputs.upload_url }}
+        asset_path: ./sagemath_installer.exe
+        asset_name: sagemath-${{ needs.build-and-export.outputs.version }}-wsl-installer.exe
+        asset_content_type: application/octet-stream
