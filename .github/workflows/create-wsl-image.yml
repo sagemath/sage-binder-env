@@ -177,7 +177,7 @@ jobs:
         # Create a shortcut that starts Jupyter on Desktop
         \$ShortcutFile = "\$([Environment]::GetFolderPath('Desktop'))\\Run Jupyter.lnk"
         \$TargetPath = "C:\\Windows\\System32\\wsl.exe"
-        \$Arguments = "-d \$sagemathWSL --user user --cd ~ jupyter lab --no-browser --core-mode"
+        \$Arguments = "-d \$sagemathWSL --user user --cd ~ jupyter lab --no-browser"
         \$WScriptShell = New-Object -ComObject WScript.Shell
         \$Shortcut = \$WScriptShell.CreateShortcut(\$ShortcutFile)
         \$Shortcut.TargetPath = \$TargetPath
