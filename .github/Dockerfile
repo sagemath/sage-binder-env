@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for slim Sage
 # https://docs.docker.com/build/building/multi-stage
 
-FROM ghcr.io/sagemath/sage/sage-ubuntu-focal-standard-with-targets:latest AS target
+FROM ghcr.io/sagemath/sage/sage-ubuntu-jammy-minimal-with-targets:latest AS target
 
 # Resolve symbolic links to recreate them later
 RUN readlink /sage/prefix >> /sage/prefix_link
@@ -15,7 +15,7 @@ RUN LC_ALL=C find local src pkgs -executable -type f -exec strip '{}' ';' 2>&1 |
 # To exclude doc directory in the next stage
 RUN rm -rf local/share/doc
 
-FROM ghcr.io/sagemath/sage/sage-ubuntu-focal-standard-with-system-packages:latest
+FROM ghcr.io/sagemath/sage/sage-ubuntu-jammy-minimal-with-system-packages:latest
 
 USER root
 

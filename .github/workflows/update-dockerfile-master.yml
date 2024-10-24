@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
 
 env:
-  SAGE_TARGET: ghcr.io/sagemath/sage/sage-ubuntu-focal-standard-with-targets
-  SAGE_SYSTEM: ghcr.io/sagemath/sage/sage-ubuntu-focal-standard-with-system-packages
+  SAGE_TARGET: ghcr.io/sagemath/sage/sage-ubuntu-jammy-minimal-with-targets
+  SAGE_SYSTEM: ghcr.io/sagemath/sage/sage-ubuntu-jammy-minimal-with-system-packages
   TAG: latest
   BRANCH: master
 
