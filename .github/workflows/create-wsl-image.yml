@@ -63,11 +63,12 @@ jobs:
         tag_name: v${{ env.VERSION }}
         release_name: Run SageMath ${{ env.VERSION }} on WSL
         body: |
-          The .ps1 installer downloads the .zip file and imports a minimized SageMath ${{ env.VERSION }} into WSL.
           You are recommended to check if WSL is enabled before running the installer.
 
-          After downloading the installer, run it with PowerShell. You may also open the installer as a text file,
-          and copy and paste all lines into PowerShell.
+          The .ps1 installer downloads the .zip file and imports a minimized SageMath ${{ env.VERSION }} into WSL.
+
+          After downloading the installer, right-click it to open the context menu and run it with PowerShell.
+          You may also open the installer as a text file, and copy and paste all lines into a PowerShell window.
 
           The installer should create two shortcuts on your desktop: one for launching SageMath
           and another to start the Jupyter server for SageMath.
@@ -141,7 +142,7 @@ jobs:
           Write-Host "\$sagemathWSL was already downloaded."
         }
         # Import the WSL image
-        Write-Host "Importing..."
+        Write-Host "Start importing..."
         wsl --import SageMath-$VERSION \$dataPath \$tarFilePath
         # Check if importing succeeded
         if (-Not ((wsl -l -q) -split 'n' -contains \$sagemathWSL)) {
@@ -184,7 +185,7 @@ jobs:
         \$Shortcut.IconLocation = \$iconPathOrange
         \$Shortcut.Save()
         Write-Host "\$ShortcutFile"
-        Read-Host "\`nInstallation succeeded. Enjoy SageMath!\`nPress any key to exit"
+        Read-Host "\`n\$sagemathWSL installation succeeded!\`nPress any key to exit"
         EOF
       shell: bash
 
