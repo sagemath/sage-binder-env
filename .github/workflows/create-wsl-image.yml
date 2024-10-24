@@ -145,7 +145,8 @@ jobs:
         wsl --import SageMath-$VERSION \$dataPath \$tarFilePath
         # Check if importing succeeded
         if (-Not ((wsl -l -q) -split 'n' -contains \$sagemathWSL)) {
-          Write-Host "Failed importing \$sagemathWSL into WSL."
+          Write-Host "Importing \$sagemathWSL into WSL failed."
+          Write-Host "If WSL was freshly installed by this installer, try again after rebooting the computer."
           Read-Host "Press any key to exit"; exit
         }
         Write-Host "Creating shortcults at:"
