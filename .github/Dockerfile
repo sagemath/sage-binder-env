@@ -26,7 +26,7 @@ ENV DEBCONF_NOWARNINGS="yes"
 # Install JupyterLab to the system
 RUN apt-get update
 RUN apt-get install -y python3-pip
-RUN python3 -m pip install --no-warn-script-location notebook jupyterlab ipywidgets
+RUN python3 -m pip install --no-warn-script-location notebook jupyterlab ipywidgets nodejs
 
 # Disable annoying popup for Jupyter news
 RUN jupyter labextension disable "@jupyterlab/apputils-extension:announcements"
