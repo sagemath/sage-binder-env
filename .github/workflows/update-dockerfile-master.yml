@@ -1,0 +1,83 @@
+name: Update master image
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Run every day
+  workflow_dispatch:
+
+env:
+  SAGE_TARGET: ghcr.io/sagemath/sage/sage-ubuntu-jammy-minimal-with-targets
+  SAGE_SYSTEM: ghcr.io/sagemath/sage/sage-ubuntu-jammy-minimal-with-system-packages
+  TAG: latest
+  BRANCH: master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+
+    # Prepare .github/Dockerfile for slim Sage image
+
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ env.BRANCH }}
+    - name: Prepare .github/Dockerfile
+      run: |
+        SAGE_VERSION=$(docker run --rm ${SAGE_TARGET}:$TAG /sage/sage --version | grep -oP 'SageMath version \K[0-9.]+(?:beta\d+)?(?:rc\d+)?')
+        SAGE_TARGET_ESCAPED=$(echo "${SAGE_TARGET}" | sed 's/\//\\\//g' | sed 's/\./\\\./g')
+        SAGE_TARGET_VERSION_ESCAPED=$(echo "${SAGE_TARGET}:${SAGE_VERSION}" | sed 's/\//\\\//g' | sed 's/\./\\\./g')
+        sed -i "s/FROM ${SAGE_TARGET_ESCAPED}:\S*/FROM ${SAGE_TARGET_VERSION_ESCAPED}/g" .github/Dockerfile
+        SAGE_SYSTEM_ESCAPED=$(echo "${SAGE_SYSTEM}" | sed 's/\//\\\//g' | sed 's/\./\\\./g')
+        SAGE_SYSTEM_VERSION_ESCAPED=$(echo "${SAGE_SYSTEM}:${SAGE_VERSION}" | sed 's/\//\\\//g' | sed 's/\./\\\./g')
+        sed -i "s/FROM ${SAGE_SYSTEM_ESCAPED}:\S*/FROM ${SAGE_SYSTEM_VERSION_ESCAPED}/g" .github/Dockerfile
+        PACKAGE_NAME=ghcr.io/${{ github.repository }}:${SAGE_VERSION}
+        echo "PACKAGE_NAME=$PACKAGE_NAME" >> $GITHUB_ENV
+        git config --global user.email alice@wonderland
+        git config --global user.name alice
+        git commit -a --amend -m "Dockerfile for Sage ${SAGE_VERSION}"
+        git push -f origin $BRANCH
+
+    # Build and publish the slim Sage image to github package registry (ghpr)
+
+    - name: Log in to the Container registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .github
+        push: true
+        tags: ${{ env.PACKAGE_NAME }}
+
+    # Update files for Binder
+
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ env.BRANCH }}
+    - name: Update files for Binder
+      run: |
+        PACKAGE_NAME=${{ env.PACKAGE_NAME }}
+        PACKAGE_NAME_ESCAPED=$(echo "${PACKAGE_NAME}" | sed 's/\//\\\//g')
+        sed -i "s/FROM \S*/FROM ${PACKAGE_NAME_ESCAPED}/g" Dockerfile
+        sed -i "s/FROM \S*/FROM ${PACKAGE_NAME_ESCAPED}/g" README.rst
+        git config --global user.email alice@wonderland
+        git config --global user.name alice
+        git commit -a --amend -m "Update files for Binder"
+        git push -f origin $BRANCH
+
+    # Build docker image for Binder from Dockerfile at root
+
+    - name: Binder build
+      timeout-minutes: 30
+      continue-on-error: true
+      run: |
+        curl --keepalive-time 600 -L https://mybinder.org/build/gh/sagemath/sage-binder-env/$BRANCH
