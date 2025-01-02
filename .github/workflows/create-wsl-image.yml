@@ -1,0 +1,311 @@
+name: Build docker image and export for WSL
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Run every day
+  workflow_dispatch:
+
+jobs:
+  build-and-export:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.extract_version.outputs.version }}
+    steps:
+
+    # Create WSL export (a tar file) of the minimal Sage install
+
+    - name: Prepare Dockerfile
+      run: |
+        curl -o Dockerfile https://raw.githubusercontent.com/sagemath/sage-binder-env/master/Dockerfile
+        sed -i '/COPY notebooks/d' Dockerfile  # remove the line from Dockerfile
+
+    - name: Extract version from Dockerfile
+      id: extract_version
+      run: |
+        VERSION=$(grep '^FROM ghcr.io/sagemath/sage-binder-env:' Dockerfile | sed 's/^FROM ghcr.io\/sagemath\/sage-binder-env://')
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Build and export Docker image
+      run: |
+        docker build -t sagemath-container .
+        export CONTAINER_ID=$(docker create sagemath-container)
+        docker export $CONTAINER_ID -o sagemath-$VERSION-wsl.tar
+
+    - name: Upload tar file as artifact
+      id: upload-artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: sagemath-${{ env.VERSION }}-wsl
+        path: sagemath-${{ env.VERSION }}-wsl.tar
+
+    # Make a release
+
+    - name: Get latest release version
+      id: get_latest_release
+      run: |
+        LATEST_VERSION=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r '.tag_name // "0.0.0"' | sed 's/v//')
+        echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_ENV
+
+    - name: Zip the tar file
+      if: ${{ env.VERSION != env.LATEST_VERSION }}
+      run: |
+        zip sagemath-${{ env.VERSION }}-wsl.zip sagemath-${{ env.VERSION }}-wsl.tar
+
+    - name: Create GitHub Release
+      if: ${{ env.VERSION != env.LATEST_VERSION }}
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ env.VERSION }}
+        release_name: Run SageMath ${{ env.VERSION }} on WSL
+        body: |
+          We recommend you check if WSL is enabled before running the installer.
+
+          The .ps1 installer downloads the .zip file and imports a minimized SageMath ${{ env.VERSION }} into WSL.
+
+          After downloading the installer, right-click it to open the context menu and run it with PowerShell.
+          You may also open the installer as a text file, and copy and paste all lines into a PowerShell window.
+
+          The installer should create two shortcuts on your desktop: one for launching SageMath
+          and another to start the Jupyter server for SageMath.
+
+          The minimized SageMath is the same as the one used in the Binder environment, meaning no bells and whistles.
+          Notably the Sage build system is not included.
+        draft: false
+        prerelease: false
+
+    - name: Upload release asset
+      if: ${{ env.VERSION != env.LATEST_VERSION }}
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./sagemath-${{ env.VERSION }}-wsl.zip
+        asset_name: sagemath-${{ env.VERSION }}-wsl.zip
+        asset_content_type: application/zip
+
+    # Generate a Windows PowerShell script
+
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Generate PowerShell Script
+      run: |
+        cat << EOF > download_and_import_sagemath_to_wsl.ps1
+        # ----------------------------------------------------
+        # Copy and paste all lines into the Windows PowerShell
+        # ----------------------------------------------------
+
+        [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+        try {
+          Write-Host "Checking WSL installation."
+          wsl --install --no-distribution
+          if (\$LASTEXITCODE -ne 0) {
+            Write-Host "WSL installation failed."
+            Read-Host -Prompt "Press any key to exit"; exit
+          }
+        } catch {
+          Write-Host "Could not check WSL installation, proceeding with fingers crossed."
+        }
+        # Check if SageMath already exists in WSL
+        \$sagemathWSL = "SageMath-$VERSION"
+        if ((wsl -l -q) -contains \$sagemathWSL) {
+          # Ask user if they want to reinstall SageMath
+          \$response = Read-Host "\$sagemathWSL is already installed. Do you want to reinstall it? (y/n)"
+          if (\$response -eq "y") {
+            Write-Host "Uninstalling \$sagemathWSL."
+            # Unregister the existing SageMath WSL distribution
+            wsl --unregister \$sagemathWSL
+          } else {
+            Read-Host "OK. Press any key to exit"; exit
+          }
+        }
+        \$artifactUrl = "https://github.com/sagemath/sage-binder-env/releases/download/v$VERSION/sagemath-$VERSION-wsl.zip"
+        \$zipFilePath = "\$PWD\\artifact.zip"
+        \$dataPath = "\$HOME\\AppData\\Local\\SageMath"
+        \$tarFilePath = "\$dataPath\\sagemath-$VERSION-wsl.tar"
+        # Ensure the path exists
+        if (-Not (Test-Path \$dataPath)) { New-Item -Path \$dataPath -ItemType Directory > \$null }
+        # Skip downloading and extracting if the tar file already exists
+        if (-Not (Test-Path \$tarFilePath)) {
+          Write-Host "Downloading \$sagemathWSL..."
+          Start-BitsTransfer -Source \$artifactUrl -Destination \$zipFilePath
+          Write-Host "Extracting..."
+          Expand-Archive -Path \$zipFilePath -DestinationPath \$dataPath -Force
+          if (Test-Path \$tarFilePath) { Remove-Item \$zipFilePath }
+        } else {
+          Write-Host "\$sagemathWSL was already downloaded."
+        }
+        # Import the WSL image
+        Write-Host "Start importing..."
+        wsl --import SageMath-$VERSION \$dataPath \$tarFilePath
+        # Check if importing succeeded
+        if (-Not ((wsl -l -q) -contains \$sagemathWSL)) {
+          Write-Host "Importing \$sagemathWSL into WSL failed."
+          Write-Host "If WSL was freshly installed by this installer, try again after rebooting the computer."
+          Read-Host "Press any key to exit"; exit
+        }
+        Write-Host "Creating shortcults at:"
+        # Download icons for shortcuts
+        \$iconUrlOrange = "https://raw.githubusercontent.com/sagemath/sage-binder-env/refs/heads/master/.github/icons/orange.ico"
+        \$iconUrlBlue = "https://raw.githubusercontent.com/sagemath/sage-binder-env/refs/heads/master/.github/icons/blue.ico"
+        \$iconPathOrange = "\$dataPath\\orange.ico"
+        \$iconPathBlue = "\$dataPath\\blue.ico"
+        # Download the icon if it doesn't exist
+        if (-Not (Test-Path \$iconPathBlue)) {
+          Start-BitsTransfer -Source \$iconUrlBlue -Destination \$iconPathBlue
+        }
+        if (-Not (Test-Path \$iconPathOrange)) {
+          Start-BitsTransfer -Source \$iconUrlOrange -Destination \$iconPathOrange
+        }
+        # Create shortcuts
+        \$ShortcutFile = "\$([Environment]::GetFolderPath('Desktop'))\\Run Sage.lnk"
+        \$TargetPath = "C:\\Windows\\System32\\wsl.exe"
+        \$Arguments = "-d \$sagemathWSL --user user --cd ~ /sage/sage"
+        \$WScriptShell = New-Object -ComObject WScript.Shell
+        \$Shortcut = \$WScriptShell.CreateShortcut(\$ShortcutFile)
+        \$Shortcut.TargetPath = \$TargetPath
+        \$Shortcut.Arguments = \$Arguments
+        \$Shortcut.IconLocation = \$iconPathBlue
+        \$Shortcut.Save()
+        Write-Host "\$ShortcutFile"
+        # Create a shortcut that starts Jupyter on Desktop
+        \$ShortcutFile = "\$([Environment]::GetFolderPath('Desktop'))\\Run Jupyter.lnk"
+        \$TargetPath = "C:\\Windows\\System32\\wsl.exe"
+        \$Arguments = "-d \$sagemathWSL --user user --cd ~ jupyter lab --no-browser"
+        \$WScriptShell = New-Object -ComObject WScript.Shell
+        \$Shortcut = \$WScriptShell.CreateShortcut(\$ShortcutFile)
+        \$Shortcut.TargetPath = \$TargetPath
+        \$Shortcut.Arguments = \$Arguments
+        \$Shortcut.IconLocation = \$iconPathOrange
+        \$Shortcut.Save()
+        Write-Host "\$ShortcutFile"
+        Read-Host "\`n\$sagemathWSL installation succeeded!\`nPress any key to exit"
+        EOF
+        cat << EOF > remove_sagemath_from_wsl.ps1
+        # ----------------------------------------------------
+        # Copy and paste all lines into the Windows PowerShell
+        # ----------------------------------------------------
+
+        [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+        try {
+          Write-Host "Checking WSL installation."
+          wsl --install --no-distribution
+          if (\$LASTEXITCODE -ne 0) {
+            Write-Host "WSL installation failed."
+            Read-Host -Prompt "Press any key to exit"; exit
+          }
+        } catch {
+          Write-Host "Could not check WSL installation, proceeding with fingers crossed."
+        }
+        # Check if SageMath already exists in WSL
+        \$sagemathWSL = "SageMath-$VERSION"
+        \$dataPath = "\$HOME\\AppData\\Local\\SageMath"
+        \$iconPathOrange = "\$dataPath\\orange.ico"
+        \$iconPathBlue = "\$dataPath\\blue.ico"
+        if ((wsl -l -q) -contains \$sagemathWSL) {
+          # Ask user if they want to reinstall SageMath
+          \$response = Read-Host "Do you want to uninstall \$(\$sagemathWSL) from WSL? (y/n)"
+          if (\$response -eq "y") {
+            Write-Host "Uninstalling \$sagemathWSL..."
+            try {
+              wsl --unregister \$sagemathWSL
+            } catch {
+              Write-Host "Failed: wsl --unregister \$sagemathWSL"
+            }
+            try {
+              rm -recurse \$dataPath
+            } catch {
+              Write-Host "Failed: rm -recurse \$dataPath"
+            }
+            try {
+              \$ShortcutFile = "\$([Environment]::GetFolderPath('Desktop'))\\Run Sage.lnk"
+              rm \$ShortcutFile
+            } catch {
+              Write-Host "Failed: rm \$ShortcutFile"
+            }
+            try {
+              \$ShortcutFile = "\$([Environment]::GetFolderPath('Desktop'))\\Run Jupyter.lnk"
+              rm \$ShortcutFile
+            } catch {
+              Write-Host "Failed: rm \$ShortcutFile"
+            }
+          } else {
+            Read-Host "OK. Press any key to exit"; exit
+          }
+        } else {
+          Write-Host "\$sagemathWSL is not found."
+          Read-Host -Prompt "Press any key to exit"; exit
+        }
+        Read-Host "\`n\$sagemathWSL uninstallation succeeded!\`nPress any key to exit"
+        EOF
+      shell: bash
+
+    - name: Upload installation script as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: download_and_import_sagemath_to_wsl
+        path: download_and_import_sagemath_to_wsl.ps1
+
+    - name: Upload uninstallation script as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: remove_sagemath_from_wsl
+        path: remove_sagemath_from_wsl.ps1
+
+    - name: Upload installation script as release asset
+      if: ${{ env.VERSION != env.LATEST_VERSION }}
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./download_and_import_sagemath_to_wsl.ps1
+        asset_name: sagemath-${{ env.VERSION }}-wsl-installer.ps1
+        asset_content_type: application/octet-stream
+
+    - name: Upload uninstallation script as release asset
+      if: ${{ env.VERSION != env.LATEST_VERSION }}
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./remove_sagemath_from_wsl.ps1
+        asset_name: sagemath-${{ env.VERSION }}-wsl-uninstaller.ps1
+        asset_content_type: application/octet-stream
+
+#  build-exe:
+#    runs-on: windows-latest
+#    needs: build-and-export
+#    if: ${{ contains(needs.build-and-export.outputs.upload_url || '', 'http') }}
+#    steps:
+#    - name: Checkout repository
+#      uses: actions/checkout@v3
+#
+#    - name: Download PowerShell Script artifact
+#      uses: actions/download-artifact@v4
+#      with:
+#        name: download_and_import_sagemath_to_wsl
+#
+#    - name: Install PS2EXE
+#      run: |
+#        Install-Module -Name ps2exe -Force
+#        Import-Module ps2exe
+#        Invoke-ps2exe -inputFile .\download_and_import_sagemath_to_wsl.ps1 -outputFile .\sagemath_installer.exe
+#      shell: powershell
+#
+#    - name: Upload EXE to GitHub Release
+#      uses: actions/upload-release-asset@v1
+#      env:
+#        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      with:
+#        upload_url: ${{ needs.build-and-export.outputs.upload_url }}
+#        asset_path: ./sagemath_installer.exe
+#        asset_name: sagemath-${{ needs.build-and-export.outputs.version }}-wsl-installer.exe
+#        asset_content_type: application/octet-stream
