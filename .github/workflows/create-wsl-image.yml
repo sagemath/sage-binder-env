@@ -114,7 +114,7 @@ jobs:
         }
         # Check if SageMath already exists in WSL
         \$sagemathWSL = "SageMath-$VERSION"
-        if ((wsl -l -q) -split 'n' -contains \$sagemathWSL) {
+        if ((wsl -l -q) -contains \$sagemathWSL) {
           # Ask user if they want to reinstall SageMath
           \$response = Read-Host "\$sagemathWSL is already installed. Do you want to reinstall it? (y/n)"
           if (\$response -eq "y") {
@@ -145,7 +145,7 @@ jobs:
         Write-Host "Start importing..."
         wsl --import SageMath-$VERSION \$dataPath \$tarFilePath
         # Check if importing succeeded
-        if (-Not ((wsl -l -q) -split 'n' -contains \$sagemathWSL)) {
+        if (-Not ((wsl -l -q) -contains \$sagemathWSL)) {
           Write-Host "Importing \$sagemathWSL into WSL failed."
           Write-Host "If WSL was freshly installed by this installer, try again after rebooting the computer."
           Read-Host "Press any key to exit"; exit
@@ -208,7 +208,7 @@ jobs:
         \$dataPath = "\$HOME\\AppData\\Local\\SageMath"
         \$iconPathOrange = "\$dataPath\\orange.ico"
         \$iconPathBlue = "\$dataPath\\blue.ico"
-        if ((wsl -l -q) -split 'n' -contains \$sagemathWSL) {
+        if ((wsl -l -q) -contains \$sagemathWSL) {
           # Ask user if they want to reinstall SageMath
           \$response = Read-Host "Do you want to uninstall \$(\$sagemathWSL) from WSL? (y/n)"
           if (\$response -eq "y") {
