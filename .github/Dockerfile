@@ -37,6 +37,7 @@ RUN python3 -m pip install --no-warn-script-location --no-cache-dir notebook jup
 RUN jupyter labextension disable "@jupyterlab/apputils-extension:announcements"
 
 # Install /sage from target
+COPY --from=target /sage/build/sage-distro /sage/build/sage-distro
 COPY --from=target /sage/local /sage/local
 COPY --from=target /sage/src/bin /sage/src/bin
 COPY --from=target /sage/src/sage /sage/src/sage
