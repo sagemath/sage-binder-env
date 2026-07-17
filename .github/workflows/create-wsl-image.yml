@@ -166,7 +166,7 @@ jobs:
         # Create shortcuts
         \$ShortcutFile = "\$([Environment]::GetFolderPath('Desktop'))\\Run Sage.lnk"
         \$TargetPath = "C:\\Windows\\System32\\wsl.exe"
-        \$Arguments = "-d \$sagemathWSL --user user --cd ~ /sage/sage"
+        \$Arguments = "-d \$sagemathWSL --user user --cd ~ sage"
         \$WScriptShell = New-Object -ComObject WScript.Shell
         \$Shortcut = \$WScriptShell.CreateShortcut(\$ShortcutFile)
         \$Shortcut.TargetPath = \$TargetPath
