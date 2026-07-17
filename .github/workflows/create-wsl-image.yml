@@ -18,7 +18,7 @@ jobs:
     - name: Prepare Dockerfile
       run: |
         curl -o Dockerfile https://raw.githubusercontent.com/sagemath/sage-binder-env/master/Dockerfile
-        sed -i '/COPY notebooks/d' Dockerfile  # remove the line from Dockerfile
+        sed -i '/COPY.*notebooks/d' Dockerfile  # remove the line from Dockerfile
 
     - name: Extract version from Dockerfile
       id: extract_version
