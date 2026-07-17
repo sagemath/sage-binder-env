@@ -1,50 +1,57 @@
-# Multi-stage Dockerfile for slim Sage
-# https://docs.docker.com/build/building/multi-stage
-
-FROM ghcr.io/sagemath/sage/sage-ubuntu-jammy-minimal-with-targets:10.5 AS target
-
-# Resolve symbolic links to recreate them later
-RUN readlink /sage/prefix >> /sage/prefix_link
-RUN readlink /sage/venv >> /sage/venv_link
-
-WORKDIR /sage
-
-# Strip executables in /sage
-RUN LC_ALL=C find local src pkgs -type f -exec strip '{}' ';' 2>&1 | grep -v "file format not recognized" || true
-
-# Clean up before copying in the next stage
-RUN rm -rf local/share/doc local/share/*/doc local/share/*/examples local/share/singular/html
-
-# Remove all __pycache__ directories
-RUN find /sage -type d -name "__pycache__" -exec rm -rf {} +
-# Remove all .c .cpp files corresponding to .pyx files
-RUN find /sage -name "*.pyx" | sed 's/\(.*\)[.]pyx$/\1.c \1.cpp/' | xargs rm -f +
-
-FROM ghcr.io/sagemath/sage/sage-ubuntu-jammy-minimal-with-system-packages:10.5
+# Multi-stage Dockerfile for slim Sage based on official Docker Hub images
+ARG TAG=latest
+FROM sagemath/sagemath:${TAG} AS target
 
 USER root
 
-# Remove warnings
-ENV DEBIAN_FRONTEND noninteractive
+# Install JupyterLab, notebook, and ipywidgets inside Sage's virtual environment
+RUN sage -pip install --no-cache-dir jupyterlab notebook ipywidgets
+
+
+# Strip executables to shrink image size
+RUN LC_ALL=C find /home/sage/sage/local /home/sage/sage/src -type f -exec strip '{}' ';' 2>/dev/null || true
+
+# Remove all __pycache__ directories
+RUN find /home/sage/sage -type d -name "__pycache__" -exec rm -rf {} +
+# Remove docs, examples, and other non-runtime files to save space
+RUN rm -rf /home/sage/sage/local/share/doc /home/sage/sage/local/share/*/doc /home/sage/sage/local/share/*/examples
+
+# We use ubuntu:jammy as the runner base to match sagemath/sagemath's OS
+FROM ubuntu:noble
+
+USER root
+
+# Prevent interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
 ENV DEBCONF_NOWARNINGS="yes"
 
-# Install JupyterLab to the system
-RUN apt-get update
-RUN apt-get install -y --no-install-recommends python3-pip
-RUN python3 -m pip install --no-warn-script-location --no-cache-dir notebook jupyterlab ipywidgets
+# Install Sage run-time dependencies
+RUN apt-get -qq update \
+    && apt-get -qq install -y --no-install-recommends \
+       gfortran gcc g++ libstdc++-13-dev sudo openssl pkg-config patch \
+       libz-dev libbz2-dev bzip2 ca-certificates perl libboost-dev python3 \
+    && apt-get -qq clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Disable annoying popup for Jupyter news
-RUN jupyter labextension disable "@jupyterlab/apputils-extension:announcements"
+# Create user 'sage' with uid 1000
+RUN (userdel -r ubuntu || true) \
+    && useradd -m -s /bin/bash -c "Sage user" -u 1000 sage \
+    && echo "sage ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/01-sage \
+    && chmod 0440 /etc/sudoers.d/01-sage
 
-# Install /sage from target
-COPY --from=target /sage/build/sage-distro /sage/build/sage-distro
-COPY --from=target /sage/local /sage/local
-COPY --from=target /sage/src/bin /sage/src/bin
-COPY --from=target /sage/src/sage /sage/src/sage
-COPY --from=target /sage/sage /sage/sage
+# Copy ONLY necessary Sage directories from target
+WORKDIR /home/sage/sage
+COPY --chown=sage:sage --from=target /home/sage/sage/local ./local
+COPY --chown=sage:sage --from=target /home/sage/sage/src/bin ./src/bin
+COPY --chown=sage:sage --from=target /home/sage/sage/src/sage ./src/sage
+COPY --chown=sage:sage --from=target /home/sage/sage/sage ./sage
+# Recreate prefix and venv symlinks
+RUN ln -s local /home/sage/sage/prefix && \
+    ln -s local/var/lib/sage/venv-python3.* /home/sage/sage/venv
 
-# Recreate symbolic links
-COPY --from=target /sage/prefix_link /sage/prefix_link
-COPY --from=target /sage/venv_link /sage/venv_link
-RUN ln -s $(cat /sage/prefix_link) /sage/prefix && rm /sage/prefix_link
-RUN ln -s $(cat /sage/venv_link) /sage/venv && rm /sage/venv_link
+# Set up global wrapper symlinks
+RUN ln -sf /home/sage/sage/sage /usr/bin/sage && \
+    ln -sf /home/sage/sage/sage /usr/bin/sagemath
+
+USER sage
+WORKDIR /home/sage

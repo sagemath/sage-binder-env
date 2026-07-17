@@ -6,9 +6,6 @@ on:
   workflow_dispatch:
 
 env:
-  SAGE_TARGET: ghcr.io/sagemath/sage/sage-ubuntu-jammy-minimal-with-targets
-  SAGE_SYSTEM: ghcr.io/sagemath/sage/sage-ubuntu-jammy-minimal-with-system-packages
-  TAG: latest
   BRANCH: master
 
 jobs:
@@ -19,60 +16,49 @@ jobs:
       packages: write
     steps:
 
-    # Prepare .github/Dockerfile for slim Sage image
-
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       with:
         ref: ${{ env.BRANCH }}
-    - name: Prepare .github/Dockerfile
-      run: |
-        SAGE_VERSION=$(docker run --rm ${SAGE_TARGET}:$TAG /sage/sage --version | grep -oP 'SageMath version \K[0-9.]+(?:beta\d+)?(?:rc\d+)?')
-        SAGE_TARGET_ESCAPED=$(echo "${SAGE_TARGET}" | sed 's/\//\\\//g' | sed 's/\./\\\./g')
-        SAGE_TARGET_VERSION_ESCAPED=$(echo "${SAGE_TARGET}:${SAGE_VERSION}" | sed 's/\//\\\//g' | sed 's/\./\\\./g')
-        sed -i "s/FROM ${SAGE_TARGET_ESCAPED}:\S*/FROM ${SAGE_TARGET_VERSION_ESCAPED}/g" .github/Dockerfile
-        SAGE_SYSTEM_ESCAPED=$(echo "${SAGE_SYSTEM}" | sed 's/\//\\\//g' | sed 's/\./\\\./g')
-        SAGE_SYSTEM_VERSION_ESCAPED=$(echo "${SAGE_SYSTEM}:${SAGE_VERSION}" | sed 's/\//\\\//g' | sed 's/\./\\\./g')
-        sed -i "s/FROM ${SAGE_SYSTEM_ESCAPED}:\S*/FROM ${SAGE_SYSTEM_VERSION_ESCAPED}/g" .github/Dockerfile
-        PACKAGE_NAME=ghcr.io/${{ github.repository }}:${SAGE_VERSION}
-        echo "PACKAGE_NAME=$PACKAGE_NAME" >> $GITHUB_ENV
-        git config --global user.email alice@wonderland
-        git config --global user.name alice
-        git commit -a --amend -m "Dockerfile for Sage ${SAGE_VERSION}"
-        git push -f origin $BRANCH
 
-    # Build and publish the slim Sage image to github package registry (ghpr)
+    - name: Get latest Sage version
+      run: |
+        SAGE_VERSION=$(curl -s "https://hub.docker.com/v2/repositories/sagemath/sagemath/tags/?page_size=100" | jq -r '.results[].name' | grep -E '^[0-9]+\.[0-9]+$' | sort -V | tail -n1)
+        echo "SAGE_VERSION=$SAGE_VERSION" >> $GITHUB_ENV
+        echo "PACKAGE_NAME=ghcr.io/${{ github.repository }}:$SAGE_VERSION" >> $GITHUB_ENV
+
+    # Build and publish the base image to GHCR
 
     - name: Log in to the Container registry
-      uses: docker/login-action@v3
+      uses: docker/login-action@v4
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build and push Docker image
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v7
       with:
         context: .github
         push: true
-        tags: ${{ env.PACKAGE_NAME }}
+        tags: |
+          ${{ env.PACKAGE_NAME }}
+          ghcr.io/${{ github.repository }}:latest
+        build-args: |
+          TAG=${{ env.SAGE_VERSION }}
 
     # Update files for Binder
 
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        ref: ${{ env.BRANCH }}
     - name: Update files for Binder
       run: |
-        PACKAGE_NAME=${{ env.PACKAGE_NAME }}
-        PACKAGE_NAME_ESCAPED=$(echo "${PACKAGE_NAME}" | sed 's/\//\\\//g')
+        PACKAGE_NAME_ESCAPED=$(echo "${{ env.PACKAGE_NAME }}" | sed 's/\//\\\//g')
         sed -i "s/FROM \S*/FROM ${PACKAGE_NAME_ESCAPED}/g" Dockerfile
         sed -i "s/FROM \S*/FROM ${PACKAGE_NAME_ESCAPED}/g" README.rst
         git config --global user.email alice@wonderland
         git config --global user.name alice
-        git commit -a --amend -m "Update files for Binder"
-        git push -f origin $BRANCH
+        git add Dockerfile README.rst
+        git diff --quiet && git diff --staged --quiet || git commit -m "Update Sage to ${{ env.SAGE_VERSION }}"
+        git push origin ${{ env.BRANCH }}
 
     # Build docker image for Binder from Dockerfile at root
 
@@ -80,4 +66,4 @@ jobs:
       timeout-minutes: 30
       continue-on-error: true
       run: |
-        curl --keepalive-time 600 -L https://mybinder.org/build/gh/sagemath/sage-binder-env/$BRANCH
+        curl --keepalive-time 600 -H "Accept: text/event-stream" -L https://mybinder.org/build/gh/sagemath/sage-binder-env/$BRANCH
