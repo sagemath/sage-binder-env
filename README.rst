@@ -28,7 +28,7 @@ Extending the Dockerfile
 
 The `Dockerfile` is based on the Docker image::
 
-    FROM ghcr.io/sagemath/sage-binder-env:10.10.rc0
+    FROM ghcr.io/sagemath/sage-binder-env:10.10.rc1
 
 which contains the latest develop version of Sage.
 
