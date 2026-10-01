@@ -1,7 +1,7 @@
 # Dockerfile for binder
 # Reference: https://mybinder.readthedocs.io/en/latest/tutorials/dockerfile.html
 
-FROM ghcr.io/sagemath/sage-binder-env:10.10.rc2
+FROM ghcr.io/sagemath/sage-binder-env:11.0.beta0
 
 USER root
 
